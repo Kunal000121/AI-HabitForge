@@ -19,7 +19,7 @@ export default function MorningMotivation() {
     api
       .get("/ai/morning")
       .then((res) => {
-        setContent(res.data.content);
+        setContent(res.data.content.content);
         localStorage.setItem("morning-seen", today);
       })
       .finally(() => setLoading(false));

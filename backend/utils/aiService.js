@@ -9,7 +9,7 @@ const getClient = () => {
   return client;
 };
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 export const isAIEnabled = () => !!process.env.GEMINI_API_KEY;
 
@@ -23,8 +23,9 @@ export const parseJSON = (text) => {
   return JSON.parse(cleaned.trim());
 };
 
-export const chatCompletion = async ({ system, user, temperature = 0.7 }) => {
+export const chatCompletion = async ( system, user, temperature = 0.7 ) => {
   const c = getClient();
+  //console.log("called the chat function",system);
   if (!c) {
     return {
       ok: false,
@@ -50,7 +51,7 @@ export const chatCompletion = async ({ system, user, temperature = 0.7 }) => {
 
 export const SYSTEM_PROMPTS = {
   weekly: `You are an AI habit coach writing a personalized weekly review. 
-Write a 120 to 180-word report covering wins, struggles, patterns, and encouragement.
+Write a 100 to 120-word report covering wins, struggles, patterns, and encouragement.
 Use the user's actual habit names and data provided in the context.
 Do not use markdown headers. Write in plain prose with line breaks.`,
 
@@ -82,7 +83,7 @@ Cite actual habit names, specific days of the week, and completion percentages f
 Keep your response strictly grounded in the real numbers and data provided. Do not give generic advice.`,
 
   morning: `You are an energetic and warm morning habit coach.
-Write a short, personalized morning motivation message between 30 and 60 words.
+Write a short, personalized morning motivation message between 20 and 30 words.
 You MUST mention the user's specific habit names and their current streaks from the provided context.
 Be warm but not cheesy. Limit yourself to exactly one emoji maximum.`
 };

@@ -30,26 +30,33 @@ const buildWeeklyContext = async (userId) => {
 // 1. Weekly Report API
 export const weeklyReport = async (req, res) => {
   try {
-    const context = await buildWeeklyContext(req.user.id);
-    
-    // If the user has no active habits, return a fallback message
-    if (!context || context.length === 0) {
-      return res.status(200).json({ content: "You don't have any active habits yet. Add some habits to get your first AI weekly report!" });
+    const ctx = await buildWeeklyContext(req.user._id);
+    if (!ctx.perHabit.length) {
+      return res.json({
+        content:
+          "You don't have any active habits yet. Create your first habit to start tracking - I'll generate a weekly report once you have some data.", 
+      });
     }
+    const userMsg = `Here is the user's habit data for the past 7 days (${ctx.days[0]} to ${ctx.days[6]}):\n${ctx.perHabit
+  .map(
+    (h) =>
+      `- ${h.name} (${h.category}, ${h.frequency}): completed ${h.completedDays} of the past 7 days, target ${h.targetDays} days`
+  )
+  .join("\n")}\n\nPlease write the personalised weekly report now.`;
 
-    const userMessage = JSON.stringify(context);
-    const content = await chatCompletion(SYSTEM_PROMPTS.WEEKLY_PROMPT, userMessage);
-
-    // Persist as an AIInsight document
-    const insight = await AIInsight.create({
-      userId: req.user.id,
-      type: "weekly",
-      content
+    const { content } = await chatCompletion({
+      system: SYSTEM_PROMPTS.weekly,
+      user: userMsg,
     });
 
-    res.status(200).json(insight);
+    await AIInsight.create({
+      userId: req.user._id,
+      type: "weekly",
+      content,
+    });
+    res.json({ content });
   } catch (error) {
-    res.status(500).json({ message: "Failed to generate weekly report" });
+    res.status(500).json({ message: error.message});
   }
 };
 
@@ -59,7 +66,7 @@ export const suggestHabits = async (req, res) => {
     const { goals, productiveTime, struggles } = req.body;
     const userMessage = `Goals: ${goals}\nProductive Time: ${productiveTime}\nStruggles: ${struggles}`;
     
-    const responseText = await chatCompletion(SYSTEM_PROMPTS.SUGGESTION_PROMPT, userMessage);
+    const responseText = await chatCompletion(SYSTEM_PROMPTS.suggestion, userMessage);
     
     let suggestions;
     try {
@@ -105,7 +112,7 @@ export const recoveryPlan = async (req, res) => {
     const { current, longest } = calcStreak(logDates); 
 
     const userMessage = `Habit: ${habit.name}\nCategory: ${habit.category}\nCurrent Streak: ${current}\nLongest Streak: ${longest}`;
-    const content = await chatCompletion(SYSTEM_PROMPTS.RECOVERY_PROMPT, userMessage);
+    const content = await chatCompletion(SYSTEM_PROMPTS.recovery, userMessage);
 
     const insight = await AIInsight.create({
       userId: req.user.id,
@@ -124,7 +131,7 @@ export const recoveryPlan = async (req, res) => {
 export const chatAnalysis = async (req, res) => {
   try {
     const { question } = req.body;
-    
+   // console.log("req received", req.body);
     const habits = await Habit.find({ userId: req.user.id, isArchived: false });
     const past30Days = lastNDays(30);
     
@@ -154,18 +161,29 @@ export const chatAnalysis = async (req, res) => {
       };
     });
 
-    const userMessage = `Context Data:\n${JSON.stringify(stats)}\n\nUser Question: ${question}`;
-    const content = await chatCompletion(SYSTEM_PROMPTS.CHAT_PROMPT, userMessage);
+   // console.log("----")
 
+    const userMessage = `Context Data:\n${JSON.stringify(stats)}\n\nUser Question: ${question}`;
+
+    //console.log(userMessage);
+
+   // console.log(SYSTEM_PROMPTS.chat)
+    const content = await chatCompletion(SYSTEM_PROMPTS.chat, userMessage);
+
+
+ //   console.log(content);
     await AIInsight.create({
       userId: req.user.id,
       type: "chat",
-      content,
+      content:JSON.stringify(content),
       meta: { question }
     });
 
+ //   console.log(content);
+
     res.status(200).json({ content });
   } catch (error) {
+   // console.log(error);
     res.status(500).json({ message: "Failed to chat with AI" });
   }
 };
@@ -195,12 +213,12 @@ export const morningMotivation = async (req, res) => {
     const userMessage = `Total Habits: ${habits.length}\nCompleted Today: ${completedToday}\nHabit Streaks: ${JSON.stringify(habitContext)}`;
     
     // Call AI with a slightly higher temperature (0.8) for more varied, creative responses
-    const content = await chatCompletion(SYSTEM_PROMPTS.MORNING_PROMPT, userMessage, 0.8);
+    const content = await chatCompletion(SYSTEM_PROMPTS.morning, userMessage, 0.8);
 
     await AIInsight.create({
       userId: req.user.id,
       type: "morning",
-      content
+      content:JSON.stringify(content),
     });
 
     res.status(200).json({ content });

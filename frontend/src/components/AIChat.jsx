@@ -34,11 +34,12 @@ export default function AIChat() {
     setLoading(true);
     try {
       const res = await api.post("/ai/chat", { question: q });
+     // console.log(res);
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: res.data.content },
+        { role: "assistant", content: res.data.content.content },
       ]);
-    } catch {
+    } catch(e) {
       setMessages((m) => [
         ...m,
         {
@@ -46,8 +47,10 @@ export default function AIChat() {
           content: "Sorry, I couldn't answer that right now.",
         },
       ]);
+     // console.log(e)
     } finally {
       setLoading(false);
+    
     }
   };
 
