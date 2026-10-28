@@ -1,6 +1,6 @@
 import Habit from "../models/Habit.js";
 import HabitLog from "../models/HabitLog.js";
-import AIInsight from "../models/aIInsight.js";
+import AIInsight from "../models/AIInsight.js";
 import { chatCompletion, SYSTEM_PROMPTS } from "../utils/aiService.js";
 import { lastNDays, calcStreak, todayKey } from "../utils/dateHelper.js";
 
